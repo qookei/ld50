@@ -1,0 +1,16 @@
+{
+	"programs": {
+		"generic": {
+			"vertex": "res/shaders/generic-vertex.glsl",
+			"fragment": "res/shaders/generic-fragment.glsl"
+		}
+	},
+
+	"tex": {
+		"test": "res/gfx/test.png"
+	},
+
+	"fonts": {
+		"main": "res/font.cfg"
+	}
+}

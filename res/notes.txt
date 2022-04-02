@@ -1,0 +1,2 @@
+Used fonts, textures and sounds:
+Shinonome font family: from http://openlab.ring.gr.jp/efont/shinonome/index.html.ja
