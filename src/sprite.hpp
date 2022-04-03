@@ -24,13 +24,13 @@ struct sprite {
 
 	sprite(const sprite &) = delete;
 	sprite &operator=(const sprite &) = delete;
-	sprite(sprite &&) = default;
+	constexpr sprite(sprite &&) = default;
 	sprite &operator=(sprite &&) = default;
 
-	void render() {
+	void render(glm::vec4 color = glm::vec4{1, 1, 1, 1}) {
 		tex_->bind();
 		mesh_.program()->set_uniform("obj_pos", glm::vec2{x, y});
-		mesh_.program()->set_uniform("obj_color", glm::vec4{1, 1, 1, 1});
+		mesh_.program()->set_uniform("obj_color", color);
 		mesh_.render();
 	}
 

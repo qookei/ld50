@@ -9,7 +9,7 @@ namespace gl {
 
 template <GLenum Type>
 struct buffer {
-	friend void swap(buffer &a, buffer &b) {
+	friend constexpr void swap(buffer &a, buffer &b) {
 		using std::swap;
 
 		swap(a.id_, b.id_);
@@ -17,7 +17,7 @@ struct buffer {
 		swap(a.usage_, b.usage_);
 	}
 
-	buffer()
+	constexpr buffer()
 	:id_{0}, size_{0}, usage_{0} {}
 
 	~buffer() {
@@ -25,12 +25,12 @@ struct buffer {
 	}
 
 	buffer(const buffer &other) = delete;
-	buffer(buffer &&other) {
+	constexpr buffer(buffer &&other) {
 		swap(*this, other);
 	}
 
 	buffer &operator=(const buffer &other) = delete;
-	buffer &operator=(buffer &&other) {
+	constexpr buffer &operator=(buffer &&other) {
 		swap(*this, other);
 		return *this;
 	}

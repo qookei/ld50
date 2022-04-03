@@ -9,7 +9,10 @@
 	"tex": {
 		"test": "res/gfx/test.png",
 		"player": "res/gfx/player.png",
-		"campfire": "res/gfx/campfire.png"
+		"campfire": "res/gfx/campfire.png",
+		"bg": "res/gfx/bg.png",
+		"darkness": "res/gfx/darkness.png",
+		"spec": "res/gfx/spec.png"
 	},
 
 	"fonts": {
