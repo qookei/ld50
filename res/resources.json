@@ -12,7 +12,8 @@
 		"campfire": "res/gfx/campfire.png",
 		"bg": "res/gfx/bg.png",
 		"darkness": "res/gfx/darkness.png",
-		"spec": "res/gfx/spec.png"
+		"spec": "res/gfx/spec.png",
+		"healthbar": "res/gfx/healthbar.png"
 	},
 
 	"fonts": {

@@ -51,20 +51,24 @@ struct entity {
 
 		if (mov & do_left) {
 			spr.x -= speed_ * delta;
+			if (spr.x < 0) spr.x = 0;
 			facing_ = 1;
 		}
 
 		if (mov & do_right) {
 			spr.x += speed_ * delta;
+			if (spr.x > 146) spr.x = 149;
 			facing_ = 0;
 		}
 
 		if (mov & do_up) {
 			spr.y -= speed_ * 0.7f * delta;
+			if (spr.y < 0) spr.y = 0;
 		}
 
 		if (mov & do_down) {
 			spr.y += speed_ * 0.7f * delta;
+			if (spr.y > 106) spr.y = 106;
 		}
 
 		spr.set_frame(base_frame_ + ((facing_ << 1) | frame_));
@@ -156,6 +160,8 @@ struct zombie : entity {
 
 		return mov;
 	}
+
+	float hurt_time_ = -1;
 
 private:
 	player *chasee_;
@@ -300,8 +306,25 @@ struct game_scene : scene {
 	bool tick(double delta, input_state &state) override {
 		player_.tick(delta, state);
 
-		for (auto &zombie : zombies_)
+		for (auto &zombie : zombies_) {
 			zombie.tick(delta, state);
+
+			if (aabb(zombie.x(), zombie.y(), 11, 14, player_.x() + 2, player_.y() - 3, 9, 8) && zombie.hurt_time_ < 0) {
+				hp_ -= 4;
+				healthbar_.x = hp_ - 160;
+				zombie.hurt_time_ = 0.5;
+				particles_.add_particles_at({player_.x(), player_.y()}, player_.facing());
+			}
+
+			zombie.hurt_time_ -= delta;
+		}
+
+		if (hp_ <= 0) {
+			hp_ = 0;
+			healthbar_.x = hp_ - 160;
+			sm_->push("over");
+		}
+
 
 		if (state.just_pressed_keys.contains(SDLK_z)) {
 			std::uniform_int_distribution<int> z_lr_dist{0, 1};
@@ -358,14 +381,22 @@ struct game_scene : scene {
 		bullets_.render();
 		particles_.render();
 		darkness_.render();
+		healthbar_.render();
 	}
 
 	void reset() override {
+		std::cout << "game_scene reset\n";
+
 		player_.reset();
 		zombies_.clear();
 		campfire_.x = (160 - 11) / 2;
 		campfire_.y = (120 - 18) / 2;
 		bullets_.reset();
+		particles_.reset();
+
+		hp_ = 160;
+		healthbar_.x = 0;
+		healthbar_.y = 120 - 8;
 	}
 
 private:
@@ -379,6 +410,8 @@ private:
 	sprite darkness_{resources::the().shader("generic"), "darkness", 160, 120};
 	particles particles_;
 	bullets bullets_{&zombies_, &particles_};
+	sprite healthbar_{resources::the().shader("generic"), "healthbar", 512, 8};
+	int hp_ = 160;
 };
 
 struct pause_scene : scene {
@@ -400,12 +433,46 @@ struct pause_scene : scene {
 
 	void reset() override {
 		t_paused_.set_text("Paused");
+		t_paused_.x = (160 - 6 * 6) / 2;
+		t_paused_.y = 10;
 	}
 
 private:
 	scene_manager *sm_;
 
 	text t_paused_{resources::the().shader("generic"), resources::the().font("main")};
+};
+
+struct over_scene : scene {
+	over_scene(scene_manager *sm)
+	: sm_{sm} { }
+
+	virtual ~over_scene() = default;
+
+	bool tick(double, input_state &state) override {
+		if (state.just_pressed_keys.contains(SDLK_ESCAPE)) {
+			sm_->pop();
+			sm_->pop();
+			sm_->push("game");
+		}
+
+		return false;
+	}
+
+	void render() override {
+		t_.render({1,1,1,1});
+	}
+
+	void reset() override {
+		t_.set_text("Game over");
+		t_.x = (160 - 9 * 6) / 2;
+		t_.y = 10;
+	}
+
+private:
+	scene_manager *sm_;
+
+	text t_{resources::the().shader("generic"), resources::the().font("main")};
 };
 
 
@@ -449,6 +516,7 @@ int main() {
 	sm.register_scene<background_scene>("background");
 	sm.register_scene<game_scene>("game");
 	sm.register_scene<pause_scene>("pause");
+	sm.register_scene<over_scene>("over");
 	sm.push("game");
 	sm.push_permatick("background");
 
