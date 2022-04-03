@@ -8,9 +8,9 @@ You will need:
  - Emscripten (new enough to support C++20)
  - Meson and Ninja
 
-Clone the repository with submodules:
+Clone the repository:
 ```
-$ git clone https://github.com/qookei/ld50 --recursive
+$ git clone https://github.com/qookei/ld50
 ```
 
 Then configure it:
@@ -23,7 +23,7 @@ Then compile it:
 $ ninja -C build
 ```
 
-Then, create a symlink for `ld50.data` and launch a web server to test it, for example:
+Then create a symlink for `ld50.data` and launch a web server to test it, for example:
 ```
 $ ln -s build/ld50.data
 $ python -m http.server

@@ -7,7 +7,9 @@
 	},
 
 	"tex": {
-		"test": "res/gfx/test.png"
+		"test": "res/gfx/test.png",
+		"player": "res/gfx/player.png",
+		"campfire": "res/gfx/campfire.png"
 	},
 
 	"fonts": {
