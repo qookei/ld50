@@ -50,6 +50,7 @@ exe = executable('ld50',
 	sources,
 	include_directories : 'src/',
 	dependencies : deps,
+	cpp_args : ['-Wno-deprecated-volatile'],
 	link_args : ['--preload-file', meson.project_source_root() / 'res@/res', '--use-preload-plugins'],
 	link_depends : resources
 )

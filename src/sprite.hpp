@@ -61,6 +61,9 @@ struct sprite {
 
 	float x = 0, y = 0;
 
+	int width() { return w_; }
+	int height() { return h_; }
+
 private:
 	std::array<gl::vertex, 6> vtx_{};
 	gl::texture2d *tex_;

@@ -90,6 +90,10 @@ struct entity {
 		return facing_ == 0 ? 1 : -1;
 	}
 
+	sprite *get_sprite() {
+		return &spr;
+	}
+
 protected:
 	virtual ~entity() = default;
 
@@ -106,7 +110,7 @@ private:
 struct player : entity {
 	player() : entity{0, 50, 0.05} { }
 
-	int get_movement(double delta, input_state &state) override {
+	int get_movement(double, input_state &state) override {
 		int mov = 0;
 
 		if (state.down_keys[SDLK_LEFT]) {
@@ -136,35 +140,51 @@ struct zombie : entity {
 	zombie &operator=(zombie &&) = default;
 
 	int get_movement(double delta, input_state &) override {
-		int mov = 0;
+		if (walk_time_ < 0) {
+			int dx = std::clamp<float>(chasee_->x() - x(), -1, 1);
+			int dy = std::clamp<float>(chasee_->y() - y(), -1, 1);
 
-		constexpr int deadzone = 4;
+			constexpr int movs[] = {
+				// up left
+				do_left, do_left | do_up, do_up,
+				// up
+				do_up | do_left, do_up, do_up | do_right,
+				// up right
+				do_up, do_up | do_right, do_right,
 
-		int dx = chasee_->x() - x();
-		int dy = chasee_->y() - y();
+				// left
+				do_left | do_down, do_left, do_left | do_up,
+				// none
+				0, 0, 0,
+				// right
+				do_up | do_right, do_right, do_right | do_down,
 
-		if (std::abs(dx) < deadzone && std::abs(dy) < deadzone)
-			return 0;
+				// down left
+				do_down, do_left | do_down, do_left,
+				// down
+				do_right | do_down, do_down, do_left | do_down,
+				// down right
+				do_right, do_right | do_down, do_down,
+			};
 
-		if (std::abs(dx) > std::abs(dy)) {
-			if (dx < deadzone)
-				mov |= do_left;
-			else if (dx > deadzone)
-				mov |= do_right;
+			mov_ = movs[((dy + 1) * 3 + (dx + 1)) * 3
+				+ std::uniform_int_distribution<int>{0,2}(global_mt)];
+
+			walk_time_ = std::uniform_real_distribution<double>{0.3,0.6}(global_mt);
 		} else {
-			if (dy < deadzone)
-				mov |= do_up;
-			else if (dy > deadzone)
-				mov |= do_down;
+			walk_time_ -= delta;
 		}
 
-		return mov;
+		return mov_;
 	}
 
 	float hurt_time_ = -1;
 
 private:
 	player *chasee_;
+
+	double walk_time_ = -1;
+	int mov_ = 0;
 };
 
 bool aabb(double x1, double y1, double w1, double h1,
@@ -260,7 +280,8 @@ struct bullets {
 						clips_->emplace_back(zit->x(), zit->y() + 10);
 					zit = zom_->erase(zit);
 					bit = bul_.erase(bit);
-
+					resources::the().sound("hurt-zombie").play();
+					score++;
 					break;
 				} else {
 					++zit;
@@ -285,8 +306,11 @@ struct bullets {
 	}
 
 	void reset() {
+		score = 0;
 		bul_.clear();
 	}
+
+	int score = 0;
 
 private:
 	struct bullet {
@@ -318,6 +342,7 @@ struct game_scene : scene {
 				healthbar_.x = hp_ - 160;
 				zombie.hurt_time_ = 0.5;
 				particles_.add_particles_at({player_.x(), player_.y()}, player_.facing());
+				resources::the().sound("hurt-player").play();
 			}
 
 			zombie.hurt_time_ -= delta;
@@ -326,11 +351,13 @@ struct game_scene : scene {
 		if (hp_ <= 0) {
 			hp_ = 0;
 			healthbar_.x = hp_ - 160;
+			resources::the().sound("death").play();
 			sm_->push("over");
 		}
 
+		spawn_time_ -= delta;
 
-		if (state.just_pressed_keys.contains(SDLK_z)) {
+		if (std::uniform_int_distribution<int>{0, 99}(global_mt) > (95 - (40.f * std::min(bullets_.score / 300.f, 1.f))) && spawn_time_ < 0) {
 			std::uniform_int_distribution<int> z_lr_dist{0, 1};
 			std::uniform_int_distribution<int> z_y_dist{20, 100};
 
@@ -347,6 +374,8 @@ struct game_scene : scene {
 				z.x() = x + z_xy_dist(global_mt);
 				z.y() = y + z_xy_dist(global_mt);
 			}
+
+			spawn_time_ = 3 - 2.5f * std::min(bullets_.score / 400.f, 1.f);
 		}
 
 		shoot_time_ -= delta;
@@ -354,6 +383,7 @@ struct game_scene : scene {
 		if (state.down_keys[SDLK_SPACE] && bullet_amount_ && shoot_time_ < 0) {
 			int dx = player_.facing() < 0 ? -1 : 8;
 
+			resources::the().sound("shoot").play();
 			bullets_.add_bullet_at({player_.x() + dx, player_.y() + 7}, player_.facing());
 
 			bullet_amount_--;
@@ -367,6 +397,7 @@ struct game_scene : scene {
 
 				bullet_amount_ += std::uniform_int_distribution<int>{5, 20}(global_mt);
 				t_bullets_.set_text(std::to_string(bullet_amount_));
+				resources::the().sound("pickup").play();
 			} else {
 				++it;
 			}
@@ -388,28 +419,61 @@ struct game_scene : scene {
 			return false;
 		}
 
+		auto str = std::to_string(bullets_.score);
+		t_score_.set_text(str);
+		t_score_.y = 120 - 18;
+		t_score_.x = 160 - 8 - 8 - 6 * str.size();
+
 		return true;
 	}
 
 	void render() override {
 		bg_.render();
-		player_.render();
 
-		for (auto &zombie : zombies_)
-			zombie.render();
+		for (auto &pos : { glm::vec2{14, 25}, glm::vec2{84, 67}, glm::vec2{43, 110} }) {
+			skeleton_.x = pos.x;
+			skeleton_.y = pos.y;
+			skeleton_.render();
+		}
 
-		campfire_.render();
-		bullets_.render();
-		particles_.render();
+		for (auto &pos : { glm::vec2{67, 102}, glm::vec2{78, 44}, glm::vec2{110, 96} }) {
+			stone_.x = pos.x;
+			stone_.y = pos.y;
+			stone_.render();
+		}
+
 		for (auto c : clips_) {
 			bullet_tiny_.x = c.x;
 			bullet_tiny_.y = c.y;
 			bullet_tiny_.render();
 		}
+
+		std::vector<sprite *> sprites;
+
+		sprites.push_back(player_.get_sprite());
+
+		for (auto &zombie : zombies_)
+			sprites.push_back(zombie.get_sprite());
+
+		sprites.push_back(&campfire_);
+		sprites.push_back(&tree1_);
+		sprites.push_back(&tree2_);
+		sprites.push_back(&tree3_);
+		sprites.push_back(&tree4_);
+
+		std::sort(sprites.begin(), sprites.end(), [] (auto a, auto b) { return (a->y + a->height() / 2) < (b->y + b->height() / 2); });
+
+		for (auto s : sprites)
+			s->render();
+
+		bullets_.render();
+		particles_.render();
 		darkness_.render();
 		healthbar_.render();
 		bullet_.render();
 		t_bullets_.render({1,1,1,1});
+		zombie2_.render();
+		t_score_.render({1,1,1,1});
 	}
 
 	void reset() override {
@@ -432,7 +496,20 @@ struct game_scene : scene {
 		healthbar_.y = 120 - 8;
 
 		clips_.clear();
-		shoot_time_ = -1;
+		shoot_time_ = 0.1;
+
+		tree1_.x = 58;
+		tree1_.y = 23;
+		tree2_.x = 120;
+		tree2_.y = 35;
+		tree3_.x = 40;
+		tree3_.y = 78;
+		tree4_.x = 56;
+		tree4_.y = 88;
+		spawn_time_ = -1;
+
+		zombie2_.x = 160 - 8 - 8;
+		zombie2_.y = 120 - 20;
 	}
 
 private:
@@ -451,9 +528,18 @@ private:
 	int bullet_amount_ = 20;
 	text t_bullets_{resources::the().shader("generic"), resources::the().font("main")};
 	sprite bullet_tiny_{resources::the().shader("generic"), "bullet-tiny", 4, 4};
+	sprite skeleton_{resources::the().shader("generic"), "skeleton", 16, 16};
+	sprite stone_{resources::the().shader("generic"), "stone", 8, 8};
 	std::vector<glm::vec2> clips_;
 	bullets bullets_{&zombies_, &particles_, &clips_};
-	double shoot_time_ = -1;
+	double shoot_time_ = 0.1;
+	sprite tree1_{resources::the().shader("generic"), "tree", 32, 32};
+	sprite tree2_{resources::the().shader("generic"), "tree", 32, 32};
+	sprite tree3_{resources::the().shader("generic"), "tree", 32, 32};
+	sprite tree4_{resources::the().shader("generic"), "tree", 32, 32};
+	double spawn_time_ = -1;
+	text t_score_{resources::the().shader("generic"), resources::the().font("main")};
+	sprite zombie2_{resources::the().shader("generic"), "player", 8, 14, 6};
 };
 
 struct pause_scene : scene {
@@ -462,9 +548,28 @@ struct pause_scene : scene {
 
 	virtual ~pause_scene() = default;
 
-	bool tick(double, input_state &state) override {
-		if (state.just_pressed_keys.contains(SDLK_ESCAPE))
-			sm_->pop();
+	bool tick(double delta, input_state &state) override {
+		switch (phase_) {
+			case 0:
+				t_paused_.y = std::lerp(t_paused_.y, 10, time_);
+				time_ += delta * 4;
+				if (time_ > 1.0) {
+					time_ = 0;
+					phase_ = 1;
+				}
+				break;
+			case 1:
+				if (state.just_pressed_keys.contains(SDLK_ESCAPE))
+					phase_ = 2;
+				break;
+			case 2:
+				t_paused_.y = std::lerp(t_paused_.y, -12, time_);
+				time_ += delta * 4;
+				if (time_ > 1.0) {
+					sm_->pop();
+				}
+				break;
+		}
 
 		return false;
 	}
@@ -476,14 +581,21 @@ struct pause_scene : scene {
 	void reset() override {
 		t_paused_.set_text("Paused");
 		t_paused_.x = (160 - 6 * 6) / 2;
-		t_paused_.y = 10;
+		t_paused_.y = -12;
+		time_ = 0;
+		phase_ = 0;
 	}
 
 private:
 	scene_manager *sm_;
 
 	text t_paused_{resources::the().shader("generic"), resources::the().font("main")};
+	double time_ = 0;
+	int phase_ = 0;
 };
+
+
+
 
 struct over_scene : scene {
 	over_scene(scene_manager *sm)
@@ -491,31 +603,425 @@ struct over_scene : scene {
 
 	virtual ~over_scene() = default;
 
-	bool tick(double, input_state &state) override {
-		if (state.just_pressed_keys.contains(SDLK_ESCAPE)) {
-			sm_->pop();
-			sm_->pop();
-			sm_->push("game");
+	bool tick(double delta, input_state &state) override {
+		switch (phase_) {
+			case 0:
+				t_paused_.y = std::lerp(t_paused_.y, 10, time_);
+				time_ += delta * 4;
+				if (time_ > 1.0) {
+					time_ = 0;
+					phase_ = 1;
+				}
+				break;
+			case 1:
+				if (state.just_pressed_keys.contains(SDLK_ESCAPE))
+					phase_ = 2;
+				break;
+			case 2:
+				t_paused_.y = std::lerp(t_paused_.y, -12, time_);
+				time_ += delta * 4;
+				if (time_ > 1.0) {
+					sm_->pop();
+					sm_->pop();
+					sm_->push("game");
+				}
+				break;
 		}
 
 		return false;
 	}
 
 	void render() override {
-		t_.render({1,1,1,1});
+		t_paused_.render({1,1,1,1});
 	}
 
 	void reset() override {
-		t_.set_text("Game over");
-		t_.x = (160 - 9 * 6) / 2;
-		t_.y = 10;
+		t_paused_.set_text("Game over");
+		t_paused_.x = (160 - 9 * 6) / 2;
+		t_paused_.y = -12;
+		time_ = 0;
+		phase_ = 0;
 	}
 
 private:
 	scene_manager *sm_;
 
-	text t_{resources::the().shader("generic"), resources::the().font("main")};
+	text t_paused_{resources::the().shader("generic"), resources::the().font("main")};
+	double time_ = 0;
+	int phase_ = 0;
 };
+
+struct dialog_node {
+	std::string speaker;
+	std::string text;
+	sound *sound;
+	double delay;
+};
+
+struct dialog_box {
+	void tick(double delta, input_state &state) {
+		switch (state_) {
+			case 0: {
+				auto &node = nodes_[node_];
+				t_.set_text(node.text.substr(0, in_node_ + 1));
+				speaker_.set_text(node.speaker);
+
+				if (time_ >= node.delay) {
+					in_node_++;
+					node.sound->play();
+					time_ = 0;
+				}
+
+				time_ += delta;
+
+				if (in_node_ >= node.text.size()) {
+					node_++;
+					time_ = 0;
+					in_node_ = 0;
+					t_.set_text(node.text);
+					state_ = 1;
+				}
+
+				if (state.just_pressed_keys.contains(SDLK_SPACE)) {
+					in_node_ = node.text.size() - 1;
+				}
+				break;
+			}
+
+			case 1:
+				if (state.just_pressed_keys.contains(SDLK_SPACE)) {
+					if (node_ == nodes_.size())
+						state_ = 2;
+					else
+						state_ = 0;
+				}
+		}
+	}
+
+	void render() {
+		bg_.render();
+		t_.render({1,1,1,1});
+		speaker_.render({1,1,1,1});
+
+		if (state_ == 1)
+			arrow_.render();
+	}
+
+	void reset() {
+		t_.x = 6;
+		t_.y = 120 - 30;
+
+		speaker_.x = 8;
+		speaker_.y = 83;
+
+		arrow_.x = 148;
+		arrow_.y = 115;
+
+		node_ = 0;
+		in_node_ = 0;
+		time_ = 0;
+		state_ = 0;
+	}
+
+	bool is_done() {
+		return state_ == 2;
+	}
+
+	void set_nodes_1() {
+		reset();
+		nodes_ = {
+			dialog_node{"Radio", "* Incoming transmission *", &resources::the().sound("click2"), 0.03},
+			dialog_node{"Radio", "Hello? Is anyone there?", &resources::the().sound("click2"), 0.01},
+			dialog_node{"You", "Yes! Can you help me?\nI am stranded here, and I am running\nout of food.", &resources::the().sound("click"), 0.01},
+			dialog_node{"Radio", "Please stand by, we will send you\ncoordinates to where we are stationed.", &resources::the().sound("click2"), 0.01},
+			dialog_node{"You", "Understood.", &resources::the().sound("click"), 0.01},
+			dialog_node{"Radio", "* Click *", &resources::the().sound("click2"), 0.03},
+			dialog_node{"You", "I should rest here for a bit before\ngoing any further.", &resources::the().sound("click"), 0.01}
+		};
+	}
+
+	void set_nodes_2() {
+		reset();
+		nodes_ = {
+			dialog_node{"Radio", "* Incoming transmission *", &resources::the().sound("click2"), 0.03},
+			dialog_node{"Radio", "Are you still there?", &resources::the().sound("click2"), 0.01},
+			dialog_node{"You", "Yes!", &resources::the().sound("click"), 0.01},
+			dialog_node{"Radio", "Our base is at 49.1...", &resources::the().sound("click2"), 0.01},
+			dialog_node{"Radio", "...", &resources::the().sound("hurt-zombie"), 0.05},
+			dialog_node{"Radio", "* Click *", &resources::the().sound("click2"), 0.03},
+			dialog_node{"You", "Hello? Hello?? Shit, my radio is out\nof power. This is bad...", &resources::the().sound("click"), 0.01}
+		};
+	}
+
+private:
+	text t_{resources::the().shader("generic"), resources::the().font("tiny")};
+	text speaker_{resources::the().shader("generic"), resources::the().font("tiny")};
+	sprite bg_{resources::the().shader("generic"), "dialog-bg", 160, 120};
+	sprite arrow_{resources::the().shader("generic"), "arrow", 8, 8};
+
+	std::vector<dialog_node> nodes_;
+
+	size_t node_ = 0;
+	size_t in_node_ = 0;
+	double time_ = 0;
+	int state_ = 0;
+};
+
+struct animated_player : entity {
+	animated_player() : entity{0, 15, 0.1} { }
+
+	int get_movement(double, input_state &) override {
+		return do_right;
+	}
+};
+
+struct intro_scene : scene {
+	intro_scene(scene_manager *sm)
+	: sm_{sm} { }
+
+	virtual ~intro_scene() = default;
+
+	bool tick(double delta, input_state &state) override {
+		switch (phase_) {
+			case 0:
+				time_ += delta;
+				if (time_ >= 1.5) {
+					time_ = 0;
+					phase_ = 1;
+				}
+				player_.tick(delta, state);
+				break;
+			case 1:
+				db_.tick(delta, state);
+				if (db_.is_done()) {
+					phase_ = 2;
+					db_.set_nodes_2();
+				}
+				break;
+			case 2:
+				player_.tick(delta, state);
+			case 3:
+				time_ += delta * 2;
+				if (time_ >= 1) {
+					time_ = 0;
+					phase_++;
+					if (phase_ == 3) {
+						player_.x() = 64;
+						player_.y() = 64;
+					}
+				}
+				break;
+			case 4:
+				db_.tick(delta, state);
+				if (db_.is_done()) {
+					sm_->pop();
+					sm_->push("game");
+				}
+		}
+
+		std::uniform_int_distribution<int> cf_frame_dist{0, 3};
+
+		campfire_time_ += delta;
+		if (campfire_time_ > 0.1) {
+			campfire_.set_frame(cf_frame_dist(global_mt));
+			campfire_time_ = 0;
+		}
+
+//		sm_->pop();
+//		sm_->push("game");
+		return false;
+	}
+
+	void render() override {
+		bg_.render();
+
+		for (auto &pos : { glm::vec2{14, 25}, glm::vec2{84, 67}, glm::vec2{43, 110} }) {
+			skeleton_.x = pos.x;
+			skeleton_.y = pos.y;
+			skeleton_.render();
+		}
+
+		for (auto &pos : { glm::vec2{67, 102}, glm::vec2{78, 44}, glm::vec2{110, 96} }) {
+			stone_.x = pos.x;
+			stone_.y = pos.y;
+			stone_.render();
+		}
+
+		std::vector<sprite *> sprites;
+
+		sprites.push_back(player_.get_sprite());
+
+		if (phase_ > 2)
+			sprites.push_back(&campfire_);
+		sprites.push_back(&tree1_);
+		sprites.push_back(&tree2_);
+		sprites.push_back(&tree3_);
+		sprites.push_back(&tree4_);
+
+		std::sort(sprites.begin(), sprites.end(), [] (auto a, auto b) { return (a->y + a->height() / 2) < (b->y + b->height() / 2); });
+
+		for (auto s : sprites)
+			s->render();
+
+		if (phase_ < 3)
+			darkness2_.render({1,1,1,1+(phase_ == 2 ? time_ : 0)});
+		else {
+			darkness_.render();
+			darkness2_.render({1,1,1,1-(phase_ == 3 ? time_ : 1)});
+		}
+
+		if (phase_ == 1 || phase_ == 4)
+			db_.render();
+	}
+
+	void reset() override {
+		db_.reset();
+
+		player_.reset();
+
+		player_.x() = -8;
+		player_.y() = (120 - 14) / 2;
+
+		campfire_.x = (160 - 11) / 2;
+		campfire_.y = (120 - 18) / 2;
+
+		tree1_.x = 58;
+		tree1_.y = 23;
+		tree2_.x = 120;
+		tree2_.y = 35;
+		tree3_.x = 40;
+		tree3_.y = 78;
+		tree4_.x = 56;
+		tree4_.y = 88;
+
+		db_.set_nodes_1();
+
+		phase_ = 0;
+		time_ = 0;
+	}
+
+private:
+	scene_manager *sm_;
+	dialog_box db_;
+
+	animated_player player_;
+	sprite campfire_{resources::the().shader("generic"), "campfire", 11, 18};
+	double campfire_time_ = 0;
+	sprite bg_{resources::the().shader("generic"), "bg", 160, 120};
+	sprite skeleton_{resources::the().shader("generic"), "skeleton", 16, 16};
+	sprite stone_{resources::the().shader("generic"), "stone", 8, 8};
+	sprite tree1_{resources::the().shader("generic"), "tree", 32, 32};
+	sprite tree2_{resources::the().shader("generic"), "tree", 32, 32};
+	sprite tree3_{resources::the().shader("generic"), "tree", 32, 32};
+	sprite tree4_{resources::the().shader("generic"), "tree", 32, 32};
+	sprite darkness_{resources::the().shader("generic"), "darkness", 160, 120};
+	sprite darkness2_{resources::the().shader("generic"), "darkness2", 160, 120};
+
+	int phase_ = 0;
+	double time_ = 0;
+};
+
+
+struct menu_scene : scene {
+	menu_scene(scene_manager *sm)
+	: sm_{sm} { }
+
+	virtual ~menu_scene() = default;
+
+	bool tick(double delta, input_state &state) override {
+		switch (phase_) {
+			case 0:
+				time_ += delta * 3;
+				if (time_ >= 1) {
+					time_ = 0;
+					phase_ = 1;
+				}
+				title_.y = std::lerp(title_.y, 4, time_);
+				start_.y = std::lerp(start_.y, 102, time_);
+				break;
+			case 1:
+				if (state.just_pressed_keys.size()) {
+					sm_->pop();
+					sm_->push("intro");
+				}
+				break;
+		}
+
+		return false;
+	}
+
+	void render() override {
+		bg_.render();
+
+		for (auto &pos : { glm::vec2{14, 25}, glm::vec2{84, 67}, glm::vec2{43, 110} }) {
+			skeleton_.x = pos.x;
+			skeleton_.y = pos.y;
+			skeleton_.render();
+		}
+
+		for (auto &pos : { glm::vec2{67, 102}, glm::vec2{78, 44}, glm::vec2{110, 96} }) {
+			stone_.x = pos.x;
+			stone_.y = pos.y;
+			stone_.render();
+		}
+
+		tree1_.render();
+		tree2_.render();
+		tree3_.render();
+		tree4_.render();
+
+		darkness2_.render();
+
+		title_.render({1,1,1,1});
+		start_.render({1,1,1,1});
+	}
+
+	void reset() override {
+		title_.set_text("TITLE HERE");
+		title_.x = (160 - 10 * 6) / 2;
+		title_.y = -12;
+
+		start_.set_text("Press any key to start");
+		start_.x = (160 - 22 * 6) / 2;
+		start_.y = 120;
+
+		tree1_.x = 58;
+		tree1_.y = 23;
+		tree2_.x = 120;
+		tree2_.y = 35;
+		tree3_.x = 40;
+		tree3_.y = 78;
+		tree4_.x = 56;
+		tree4_.y = 88;
+
+		phase_ = 0;
+		time_ = 0;
+	}
+
+private:
+	scene_manager *sm_;
+
+	sprite bg_{resources::the().shader("generic"), "bg", 160, 120};
+	sprite skeleton_{resources::the().shader("generic"), "skeleton", 16, 16};
+	sprite stone_{resources::the().shader("generic"), "stone", 8, 8};
+	sprite tree1_{resources::the().shader("generic"), "tree", 32, 32};
+	sprite tree2_{resources::the().shader("generic"), "tree", 32, 32};
+	sprite tree3_{resources::the().shader("generic"), "tree", 32, 32};
+	sprite tree4_{resources::the().shader("generic"), "tree", 32, 32};
+	sprite darkness2_{resources::the().shader("generic"), "darkness2", 160, 120};
+
+	int phase_ = 0;
+	double time_ = 0;
+
+	text title_{resources::the().shader("generic"), resources::the().font("main")};
+	text start_{resources::the().shader("generic"), resources::the().font("main")};
+};
+
+
+
+
+
+
 
 
 struct background_scene : scene {
@@ -556,10 +1062,12 @@ int main() {
 	scene_manager sm{};
 
 	sm.register_scene<background_scene>("background");
+	sm.register_scene<menu_scene>("menu");
 	sm.register_scene<game_scene>("game");
 	sm.register_scene<pause_scene>("pause");
 	sm.register_scene<over_scene>("over");
-	sm.push("game");
+	sm.register_scene<intro_scene>("intro");
+	sm.push("menu");
 	sm.push_permatick("background");
 
 	wnd.attach_ticker(sm);

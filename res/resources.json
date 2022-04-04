@@ -15,10 +15,27 @@
 		"spec": "res/gfx/spec.png",
 		"healthbar": "res/gfx/healthbar.png",
 		"bullet": "res/gfx/bullet.png",
-		"bullet-tiny": "res/gfx/bullet-tiny.png"
+		"bullet-tiny": "res/gfx/bullet-tiny.png",
+		"skeleton": "res/gfx/skeleton.png",
+		"stone": "res/gfx/stone.png",
+		"tree": "res/gfx/tree.png",
+		"dialog-bg": "res/gfx/dialog-bg.png",
+		"arrow": "res/gfx/arrow.png",
+		"darkness2": "res/gfx/darkness2.png"
 	},
 
 	"fonts": {
-		"main": "res/font.cfg"
+		"main": "res/font.cfg",
+		"tiny": "res/font-tiny.cfg"
+	},
+
+	"sounds": {
+		"click2": "res/sound/click2.wav",
+		"click": "res/sound/click.wav",
+		"death": "res/sound/death.wav",
+		"hurt-player": "res/sound/hurt-player.wav",
+		"hurt-zombie": "res/sound/hurt-zombie.wav",
+		"shoot": "res/sound/shoot.wav",
+		"pickup": "res/sound/pickup.wav"
 	}
 }

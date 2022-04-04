@@ -1,2 +1,3 @@
 Used fonts, textures and sounds:
 Shinonome font family: from http://openlab.ring.gr.jp/efont/shinonome/index.html.ja
+CG Mono 3x5 font: from https://fontstruct.com/fontstructions/show/1404346/cg-pixel-4x5-2-1
