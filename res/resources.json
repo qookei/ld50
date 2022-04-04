@@ -13,7 +13,9 @@
 		"bg": "res/gfx/bg.png",
 		"darkness": "res/gfx/darkness.png",
 		"spec": "res/gfx/spec.png",
-		"healthbar": "res/gfx/healthbar.png"
+		"healthbar": "res/gfx/healthbar.png",
+		"bullet": "res/gfx/bullet.png",
+		"bullet-tiny": "res/gfx/bullet-tiny.png"
 	},
 
 	"fonts": {

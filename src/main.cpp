@@ -242,8 +242,8 @@ private:
 };
 
 struct bullets {
-	bullets(std::vector<zombie> *zom, particles *par)
-	: zom_{zom}, par_{par} { }
+	bullets(std::vector<zombie> *zom, particles *par, std::vector<glm::vec2> *clips)
+	: zom_{zom}, par_{par}, clips_{clips} { }
 
 	void tick(double delta) {
 		for (auto bit = bul_.begin(); bit != bul_.end();) {
@@ -256,8 +256,11 @@ struct bullets {
 						zit->x(), zit->y(), 11, 14)) {
 					destroyed = true;
 					par_->add_particles_at({bit->pos.x, bit->pos.y}, bit->facing);
+					if (std::uniform_int_distribution<int>{0, 19}(global_mt) > 14)
+						clips_->emplace_back(zit->x(), zit->y() + 10);
 					zit = zom_->erase(zit);
 					bit = bul_.erase(bit);
+
 					break;
 				} else {
 					++zit;
@@ -295,6 +298,7 @@ private:
 	std::vector<bullet> bul_;
 	std::vector<zombie> *zom_;
 	particles *par_;
+	std::vector<glm::vec2> *clips_;
 };
 
 struct game_scene : scene {
@@ -345,10 +349,27 @@ struct game_scene : scene {
 			}
 		}
 
-		if (state.just_pressed_keys.contains(SDLK_SPACE)) {
+		shoot_time_ -= delta;
+
+		if (state.down_keys[SDLK_SPACE] && bullet_amount_ && shoot_time_ < 0) {
 			int dx = player_.facing() < 0 ? -1 : 8;
 
 			bullets_.add_bullet_at({player_.x() + dx, player_.y() + 7}, player_.facing());
+
+			bullet_amount_--;
+			t_bullets_.set_text(std::to_string(bullet_amount_));
+			shoot_time_ = 0.2;
+		}
+
+		for (auto it = clips_.begin(); it != clips_.end();) {
+			if (aabb(player_.x(), player_.y(), 11, 14, it->x, it->y, 4, 4)) {
+				it = clips_.erase(it);
+
+				bullet_amount_ += std::uniform_int_distribution<int>{5, 20}(global_mt);
+				t_bullets_.set_text(std::to_string(bullet_amount_));
+			} else {
+				++it;
+			}
 		}
 
 		bullets_.tick(delta);
@@ -380,13 +401,18 @@ struct game_scene : scene {
 		campfire_.render();
 		bullets_.render();
 		particles_.render();
+		for (auto c : clips_) {
+			bullet_tiny_.x = c.x;
+			bullet_tiny_.y = c.y;
+			bullet_tiny_.render();
+		}
 		darkness_.render();
 		healthbar_.render();
+		bullet_.render();
+		t_bullets_.render({1,1,1,1});
 	}
 
 	void reset() override {
-		std::cout << "game_scene reset\n";
-
 		player_.reset();
 		zombies_.clear();
 		campfire_.x = (160 - 11) / 2;
@@ -394,9 +420,19 @@ struct game_scene : scene {
 		bullets_.reset();
 		particles_.reset();
 
+		bullet_.x = 8;
+		bullet_.y = 120 - 16;
+		t_bullets_.set_text("20");
+		t_bullets_.x = 18;
+		t_bullets_.y = 120 - 18;
+		bullet_amount_ = 20;
+
 		hp_ = 160;
 		healthbar_.x = 0;
 		healthbar_.y = 120 - 8;
+
+		clips_.clear();
+		shoot_time_ = -1;
 	}
 
 private:
@@ -409,9 +445,15 @@ private:
 	sprite bg_{resources::the().shader("generic"), "bg", 160, 120};
 	sprite darkness_{resources::the().shader("generic"), "darkness", 160, 120};
 	particles particles_;
-	bullets bullets_{&zombies_, &particles_};
 	sprite healthbar_{resources::the().shader("generic"), "healthbar", 512, 8};
+	sprite bullet_{resources::the().shader("generic"), "bullet", 8, 8};
 	int hp_ = 160;
+	int bullet_amount_ = 20;
+	text t_bullets_{resources::the().shader("generic"), resources::the().font("main")};
+	sprite bullet_tiny_{resources::the().shader("generic"), "bullet-tiny", 4, 4};
+	std::vector<glm::vec2> clips_;
+	bullets bullets_{&zombies_, &particles_, &clips_};
+	double shoot_time_ = -1;
 };
 
 struct pause_scene : scene {
