@@ -827,8 +827,6 @@ struct intro_scene : scene {
 			campfire_time_ = 0;
 		}
 
-//		sm_->pop();
-//		sm_->push("game");
 		return false;
 	}
 
