@@ -712,6 +712,7 @@ struct dialog_box {
 	void reset() {
 		t_.x = 6;
 		t_.y = 120 - 30;
+		t_.set_text("\x7f");
 
 		speaker_.x = 8;
 		speaker_.y = 83;
