@@ -620,7 +620,7 @@ struct over_scene : scene {
 					phase_ = 2;
 				break;
 			case 2:
-				t_paused_.y = std::lerp(t_paused_.y, -12, time_);
+				t_paused_.y = std::lerp(t_paused_.y, -24, time_);
 				time_ += delta * 4;
 				if (time_ > 1.0) {
 					sm_->pop();
@@ -638,9 +638,9 @@ struct over_scene : scene {
 	}
 
 	void reset() override {
-		t_paused_.set_text("Game over");
-		t_paused_.x = (160 - 9 * 6) / 2;
-		t_paused_.y = -12;
+		t_paused_.set_text("       Game over\nPress Esc to play again");
+		t_paused_.x = (160 - 23 * 6) / 2;
+		t_paused_.y = -24;
 		time_ = 0;
 		phase_ = 0;
 	}
