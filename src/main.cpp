@@ -286,8 +286,15 @@ struct bullets {
 				}
 			}
 
-			if (!destroyed)
-				++bit;
+			if (!destroyed) {
+				if (bit->pos.x < -4 || bit->pos.x > 160
+						|| bit->pos.y < -1 
+						|| bit->pos.y > 120) {
+					bit = bul_.erase(bit);
+				} else {
+					++bit;
+				}
+			}
 		}
 	}
 
@@ -295,7 +302,7 @@ struct bullets {
 		for (auto &b : bul_) {
 			spr.x = b.pos.x;
 			spr.y = b.pos.y;
-			spr.render({0.23, 0.23, 0.23, 1});
+			spr.render({0.23, 1, 0.23, 1});
 		}
 	}
 
@@ -316,7 +323,7 @@ private:
 		glm::vec2 pos;
 	};
 
-	sprite spr{resources::the().shader("generic"), "spec", 1, 1};
+	sprite spr{resources::the().shader("generic"), "spec", 4, 1};
 	std::vector<bullet> bul_;
 	std::vector<zombie> *zom_;
 	particles *par_;
