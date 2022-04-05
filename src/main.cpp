@@ -195,8 +195,6 @@ bool aabb(double x1, double y1, double w1, double h1,
 		|| y1 > (y2 + h2));
 }
 
-
-
 struct particles {
 	void tick(double delta) {
 		for (auto pit = particles_.begin(); pit != particles_.end();) {
@@ -594,9 +592,6 @@ private:
 	int phase_ = 0;
 };
 
-
-
-
 struct over_scene : scene {
 	over_scene(scene_manager *sm)
 	: sm_{sm} { }
@@ -975,8 +970,8 @@ struct menu_scene : scene {
 	}
 
 	void reset() override {
-		title_.set_text("TITLE HERE");
-		title_.x = (160 - 10 * 6) / 2;
+		title_.set_text("Batteries not included");
+		title_.x = (160 - 22 * 6) / 2;
 		title_.y = -12;
 
 		start_.set_text("Press any key to start");

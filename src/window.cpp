@@ -36,7 +36,7 @@ window::window() {
 			<< " (viewport: " << width << "x" << height << ")"
 			<< " (client: " << client_width << "x" << client_height << ")\n";
 
-	wnd_ = SDL_CreateWindow("Ancient Pixels", SDL_WINDOWPOS_CENTERED,
+	wnd_ = SDL_CreateWindow("Batteries not included", SDL_WINDOWPOS_CENTERED,
 			SDL_WINDOWPOS_CENTERED,
 			width * scale_, height * scale_,
 			SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
