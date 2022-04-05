@@ -36,6 +36,7 @@
 		"hurt-player": "res/sound/hurt-player.wav",
 		"hurt-zombie": "res/sound/hurt-zombie.wav",
 		"shoot": "res/sound/shoot.wav",
-		"pickup": "res/sound/pickup.wav"
+		"pickup": "res/sound/pickup.wav",
+		"play": "res/sound/play.wav"
 	}
 }

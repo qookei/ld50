@@ -934,6 +934,7 @@ struct menu_scene : scene {
 				break;
 			case 1:
 				if (state.just_pressed_keys.size()) {
+					resources::the().sound("play").play();
 					sm_->pop();
 					sm_->push("intro");
 				}
@@ -1009,13 +1010,6 @@ private:
 	text title_{resources::the().shader("generic"), resources::the().font("main")};
 	text start_{resources::the().shader("generic"), resources::the().font("main")};
 };
-
-
-
-
-
-
-
 
 struct background_scene : scene {
 	background_scene(scene_manager *) { }
