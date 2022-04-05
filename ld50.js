@@ -71,8 +71,8 @@ e.ENVIRONMENT_IS_PTHREAD || function(a) {
     }
     e.FS_createPath("/", "res", !0, !0);
     e.FS_createPath("/res", "sound", !0, !0);
-    e.FS_createPath("/res", "gfx", !0, !0);
     e.FS_createPath("/res", "shaders", !0, !0);
+    e.FS_createPath("/res", "gfx", !0, !0);
     q.prototype = {o:{}, open:function(x, p) {
       this.name = p;
       this.o[p] = this;
@@ -105,10 +105,10 @@ e.ENVIRONMENT_IS_PTHREAD || function(a) {
     h ? (h(q), h = null) : n = q;
   }, c);
   e.calledRun ? d() : (e.preRun || (e.preRun = []), e.preRun.push(d));
-}({files:[{filename:"/res/font.cfg", start:0, end:25}, {filename:"/res/resources.json", start:25, end:1093}, {filename:"/res/notes.txt", start:1093, end:1301}, {filename:"/res/font-tiny.cfg", start:1301, end:1330}, {filename:"/res/sound/shoot.wav", start:1330, end:3009, audio:1}, {filename:"/res/sound/click.wav", start:3009, end:3520, audio:1}, {filename:"/res/sound/play.wav", start:3520, end:16327, audio:1}, {filename:"/res/sound/hurt-zombie.wav", start:16327, end:18788, audio:1}, {filename:"/res/sound/click2.wav", 
-start:18788, end:19299, audio:1}, {filename:"/res/sound/death.wav", start:19299, end:31316, audio:1}, {filename:"/res/sound/pickup.wav", start:31316, end:32703, audio:1}, {filename:"/res/sound/hurt-player.wav", start:32703, end:35923, audio:1}, {filename:"/res/gfx/stone.png", start:35923, end:36540}, {filename:"/res/gfx/bg.png", start:36540, end:39874}, {filename:"/res/gfx/font-tiny.png", start:39874, end:40884}, {filename:"/res/gfx/arrow.png", start:40884, end:41481}, {filename:"/res/gfx/bullet-tiny.png", 
-start:41481, end:46314}, {filename:"/res/gfx/player.png", start:46314, end:47349}, {filename:"/res/gfx/campfire.png", start:47349, end:48435}, {filename:"/res/gfx/darkness.png", start:48435, end:54627}, {filename:"/res/gfx/dialog-bg.png", start:54627, end:55558}, {filename:"/res/gfx/test.png", start:55558, end:56201}, {filename:"/res/gfx/darkness2.png", start:56201, end:57191}, {filename:"/res/gfx/tree.png", start:57191, end:58066}, {filename:"/res/gfx/spec.png", start:58066, end:62818}, {filename:"/res/gfx/healthbar.png", 
-start:62818, end:67889}, {filename:"/res/gfx/font.png", start:67889, end:84611}, {filename:"/res/gfx/skeleton.png", start:84611, end:85238}, {filename:"/res/gfx/bullet.png", start:85238, end:90178}, {filename:"/res/shaders/generic-vertex.glsl", start:90178, end:90375}, {filename:"/res/shaders/generic-fragment.glsl", start:90375, end:90560}], remote_package_size:90560, package_uuid:"de6861d2-13e8-4510-bcf0-ab92fda1b768"});
+}({files:[{filename:"/res/resources.json", start:0, end:1068}, {filename:"/res/notes.txt", start:1068, end:1276}, {filename:"/res/font.cfg", start:1276, end:1301}, {filename:"/res/font-tiny.cfg", start:1301, end:1330}, {filename:"/res/sound/shoot.wav", start:1330, end:3009, audio:1}, {filename:"/res/sound/play.wav", start:3009, end:15816, audio:1}, {filename:"/res/sound/pickup.wav", start:15816, end:17203, audio:1}, {filename:"/res/sound/hurt-zombie.wav", start:17203, end:19664, audio:1}, {filename:"/res/sound/hurt-player.wav", 
+start:19664, end:22884, audio:1}, {filename:"/res/sound/death.wav", start:22884, end:34901, audio:1}, {filename:"/res/sound/click2.wav", start:34901, end:35412, audio:1}, {filename:"/res/sound/click.wav", start:35412, end:35923, audio:1}, {filename:"/res/shaders/generic-vertex.glsl", start:35923, end:36120}, {filename:"/res/shaders/generic-fragment.glsl", start:36120, end:36305}, {filename:"/res/gfx/tree.png", start:36305, end:37180}, {filename:"/res/gfx/test.png", start:37180, end:37823}, {filename:"/res/gfx/stone.png", 
+start:37823, end:38440}, {filename:"/res/gfx/spec.png", start:38440, end:43192}, {filename:"/res/gfx/skeleton.png", start:43192, end:43819}, {filename:"/res/gfx/player.png", start:43819, end:44854}, {filename:"/res/gfx/healthbar.png", start:44854, end:49925}, {filename:"/res/gfx/font.png", start:49925, end:66647}, {filename:"/res/gfx/font-tiny.png", start:66647, end:67657}, {filename:"/res/gfx/dialog-bg.png", start:67657, end:68588}, {filename:"/res/gfx/darkness2.png", start:68588, end:69578}, {filename:"/res/gfx/darkness.png", 
+start:69578, end:75770}, {filename:"/res/gfx/campfire.png", start:75770, end:76856}, {filename:"/res/gfx/bullet.png", start:76856, end:81796}, {filename:"/res/gfx/bullet-tiny.png", start:81796, end:86629}, {filename:"/res/gfx/bg.png", start:86629, end:89963}, {filename:"/res/gfx/arrow.png", start:89963, end:90560}], remote_package_size:90560, package_uuid:"4e0aec4e-22e9-4fc9-b4db-a874c04e0849"});
 e.ENVIRONMENT_IS_PTHREAD && (e.preRun = []);
 var ba = e.preRun.slice();
 if (!e.preRun) {
@@ -558,11 +558,11 @@ function kb() {
     return jb();
   });
 }
-var A, Aa, ob = {157260:function() {
+var A, Aa, ob = {157308:function() {
   return document.documentElement.clientWidth;
-}, 157306:function() {
+}, 157354:function() {
   return document.documentElement.clientHeight;
-}, 157353:function(a) {
+}, 157401:function(a) {
   a = D(a) + "\n\nAbort/Retry/Ignore/AlwaysIgnore? [ariA] :";
   a = window.prompt(a, "i");
   null === a && (a = "i");
@@ -572,19 +572,19 @@ var A, Aa, ob = {157260:function() {
   var b = H(a.length);
   a.subarray || a.slice ? F.set(a, b) : F.set(new Uint8Array(a), b);
   return b;
-}, 157578:function() {
+}, 157626:function() {
   return "undefined" !== typeof AudioContext || "undefined" !== typeof webkitAudioContext ? 1 : 0;
-}, 157715:function() {
+}, 157763:function() {
   return "undefined" !== typeof navigator.mediaDevices && "undefined" !== typeof navigator.mediaDevices.getUserMedia || "undefined" !== typeof navigator.webkitGetUserMedia ? 1 : 0;
-}, 157939:function(a) {
+}, 157987:function(a) {
   "undefined" === typeof e.SDL2 && (e.SDL2 = {});
   var b = e.SDL2;
   a ? b.capture = {} : b.audio = {};
   b.l || ("undefined" !== typeof AudioContext ? b.l = new AudioContext() : "undefined" !== typeof webkitAudioContext && (b.l = new webkitAudioContext()), b.l && mb(b.l));
   return void 0 === b.l ? -1 : 0;
-}, 158432:function() {
+}, 158480:function() {
   return e.SDL2.l.sampleRate;
-}, 158500:function(a, b, c, d) {
+}, 158548:function(a, b, c, d) {
   function f() {
   }
   function g(n) {
@@ -606,14 +606,14 @@ var A, Aa, ob = {157260:function() {
     nb(c, [d]);
   }, b / h.l.sampleRate * 1000);
   void 0 !== navigator.mediaDevices && void 0 !== navigator.mediaDevices.getUserMedia ? navigator.mediaDevices.getUserMedia({audio:!0, video:!1}).then(g).catch(f) : void 0 !== navigator.webkitGetUserMedia && navigator.webkitGetUserMedia({audio:!0, video:!1}, g, f);
-}, 160152:function(a, b, c, d) {
+}, 160200:function(a, b, c, d) {
   var f = e.SDL2;
   f.audio.s = f.l.createScriptProcessor(b, 0, a);
   f.audio.s.onaudioprocess = function(g) {
     void 0 !== f && void 0 !== f.audio && (f.audio.Ca = g.outputBuffer, nb(c, [d]));
   };
   f.audio.s.connect(f.l.destination);
-}, 160562:function(a, b) {
+}, 160610:function(a, b) {
   for (var c = e.SDL2, d = c.capture.pa.numberOfChannels, f = 0; f < d; ++f) {
     var g = c.capture.pa.getChannelData(f);
     if (g.length != b) {
@@ -629,7 +629,7 @@ var A, Aa, ob = {157260:function() {
       }
     }
   }
-}, 161167:function(a, b) {
+}, 161215:function(a, b) {
   for (var c = e.SDL2, d = c.audio.Ca.numberOfChannels, f = 0; f < d; ++f) {
     var g = c.audio.Ca.getChannelData(f);
     if (g.length != b) {
@@ -639,7 +639,7 @@ var A, Aa, ob = {157260:function() {
       g[h] = B[a + (h * d + f << 2) >> 2];
     }
   }
-}, 161647:function(a) {
+}, 161695:function(a) {
   var b = e.SDL2;
   if (a) {
     void 0 !== b.capture.aa && clearTimeout(b.capture.aa);
@@ -659,7 +659,7 @@ var A, Aa, ob = {157260:function() {
     void 0 != b.audio.s && (b.audio.s.disconnect(), b.audio.s = void 0), b.audio = void 0;
   }
   void 0 !== b.l && void 0 === b.audio && void 0 === b.capture && (b.l.close(), b.l = void 0);
-}, 162819:function(a, b, c) {
+}, 162867:function(a, b, c) {
   e.SDL2 || (e.SDL2 = {});
   var d = e.SDL2;
   d.$a !== e.canvas && (d.C = e.createContext(e.canvas, !1, !0), d.$a = e.canvas);
@@ -692,7 +692,7 @@ var A, Aa, ob = {157260:function() {
   }
   d.C.putImageData(d.image, 0, 0);
   return 0;
-}, 164298:function(a, b, c, d, f) {
+}, 164346:function(a, b, c, d, f) {
   var g = document.createElement("canvas");
   g.width = a;
   g.height = b;
@@ -719,14 +719,14 @@ var A, Aa, ob = {157260:function() {
   d = H(c.length + 1);
   G(c, d, c.length + 1);
   return d;
-}, 165287:function(a) {
+}, 165335:function(a) {
   e.canvas && (e.canvas.style.cursor = D(a));
   return 0;
-}, 165380:function() {
+}, 165428:function() {
   e.canvas && (e.canvas.style.cursor = "none");
-}, 165449:function() {
+}, 165497:function() {
   return window.innerWidth;
-}, 165479:function() {
+}, 165527:function() {
   return window.innerHeight;
 }};
 function pb(a, b) {
